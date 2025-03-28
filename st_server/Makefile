@@ -1,6 +1,6 @@
-# Tên file thực thi (không trùng với thư mục)
-SERVER = server/server_v1
-CLIENT = client/client_v1
+# Tên file thực thi
+SERVER = server/server
+CLIENT = client/client
 
 # Trình biên dịch
 CC = gcc
@@ -37,7 +37,7 @@ $(CLIENT): $(CLIENT_OBJS)
 
 # Dọn dẹp file biên dịch
 clean:
-	rm -f $(SERVER) $(CLIENT) $(SERVER_OBJS) $(CLIENT_OBJS)
+	rm -rf $(SERVER) $(CLIENT) $(SERVER_OBJS) $(CLIENT_OBJS)
 
 # Xây dựng lại từ đầu
 rebuild: clean all
