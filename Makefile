@@ -2,7 +2,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -O2
 # Thêm các flag cho multi-threaded server và client
-# Thêm các flag cho multi-threaded server và client
 MT_LDFLAGS = -pthread
 # MT_LDFLAGS = -pthread -lssh
 
@@ -15,13 +14,16 @@ ST_SERVER_V1_DIR = server/st_server/v1
 ST_SERVER_V2_DIR = server/st_server/v2
 ## end
 
-## single threaded
+## multi threaded
 MT_CLIENT_DIR=client/mt_client
 MT_SERVER_DIR=server/mt_server
 ## end
 
-# CLIENT_V2_DIR = client/st_server/v2  # Thêm thư mục v2
+## http server
+HTTP_SERVER_DIR=server/http_server
+## end
 
+# CLIENT_V2_DIR = client/st_server/v2  # Thêm thư mục v2
 
 # Định nghĩa các file nguồn
 ## single threaded
@@ -37,9 +39,9 @@ MT_CLIENT_SRC=$(wildcard $(MT_CLIENT_DIR)/*.c)
 MT_SERVER_SRC=$(wildcard $(MT_SERVER_DIR)/*.c)
 ## end
 
-# CLIENT_SRC = $(wildcard $(CLIENT_DIR)/*.c)
-# CLIENT_V2_SRC = $(wildcard $(CLIENT_V2_DIR)/*.c) # Thêm v2
-# SERVER_SRC = $(wildcard $(SERVER_DIR)/*.c)
+## http server
+HTTP_SERVER_SRC=$(wildcard $(HTTP_SERVER_DIR)/src/*.c)
+## end
 
 # Định nghĩa các file đối tượng (object files)
 ## single threaded
@@ -55,9 +57,10 @@ MT_CLIENT_OBJ=$(MT_CLIENT_SRC:.c=.o)
 MT_SERVER_OBJ=$(MT_SERVER_SRC:.c=.o)
 ## end
 
-# CLIENT_OBJ = $(CLIENT_SRC:.c=.o)
-# CLIENT_V2_OBJ = $(CLIENT_V2_SRC:.c=.o)
-# SERVER_OBJ = $(SERVER_SRC:.c=.o)
+## http server
+HTTP_SERVER_OBJ=$(HTTP_SERVER_SRC:.c=.o)
+## end
+
 
 # Tên file thực thi
 ## single threaded
@@ -72,14 +75,12 @@ MT_CLIENT_EXEC=$(MT_CLIENT_DIR)/mt_client
 MT_SERVER_EXEC=$(MT_SERVER_DIR)/mt_server
 ## end
 
-# CLIENT_EXEC = st_client
-# CLIENT_V2_EXEC = st_client_v2  # Tên mới cho v2
-# SERVER_EXEC = st_server
-
+## http server
+HTTP_SERVER_EXEC=$(HTTP_SERVER_DIR)/http_server
+## end
 
 # Mục tiêu mặc định
-all: $(ST_CLIENT_V1_EXEC) $(ST_CLIENT_V2_EXEC) $(ST_SERVER_V1_EXEC) $(ST_SERVER_V2_EXEC) $(MT_CLIENT_EXEC) $(MT_SERVER_EXEC)
-# all: $(CLIENT_EXEC) $(CLIENT_V2_EXEC) $(SERVER_EXEC)
+all: $(ST_CLIENT_V1_EXEC) $(ST_CLIENT_V2_EXEC) $(ST_SERVER_V1_EXEC) $(ST_SERVER_V2_EXEC) $(MT_CLIENT_EXEC) $(MT_SERVER_EXEC) $(HTTP_SERVER_EXEC)
 
 ## single threaded
 # Biên dịch chương trình client
@@ -95,7 +96,6 @@ $(ST_SERVER_V2_EXEC): $(ST_SERVER_V2_OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 ## end
 
-
 ## multi threaded
 # Biên dịch chương trình client
 $(MT_CLIENT_EXEC): $(MT_CLIENT_OBJ)
@@ -106,10 +106,15 @@ $(MT_SERVER_EXEC): $(MT_SERVER_OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ $(MT_LDFLAGS)
 ## end
 
+## http server
+$(HTTP_SERVER_EXEC): $(HTTP_SERVER_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^ $(MT_LDFLAGS)
+## end
+
 # Quy tắc biên dịch file .c thành .o
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Dọn dẹp file biên dịch
 clean:
-	rm -f $(ST_CLIENT_V1_OBJ) $(ST_CLIENT_V2_OBJ) $(ST_SERVER_V1_OBJ) $(ST_SERVER_V2_OBJ) $(ST_CLIENT_V1_EXEC) $(ST_CLIENT_V2_EXEC) $(ST_SERVER_V1_EXEC) $(ST_SERVER_V2_EXEC) $(MT_CLIENT_OBJ) $(MT_SERVER_OBJ) $(MT_CLIENT_EXEC) $(MT_SERVER_EXEC)
+	rm -f $(ST_CLIENT_V1_OBJ) $(ST_CLIENT_V2_OBJ) $(ST_SERVER_V1_OBJ) $(ST_SERVER_V2_OBJ) $(ST_CLIENT_V1_EXEC) $(ST_CLIENT_V2_EXEC) $(ST_SERVER_V1_EXEC) $(ST_SERVER_V2_EXEC) $(MT_CLIENT_OBJ) $(MT_SERVER_OBJ) $(MT_CLIENT_EXEC) $(MT_SERVER_EXEC) $(HTTP_SERVER_EXEC) $(HTTP_SERVER_OBJ)
