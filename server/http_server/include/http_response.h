@@ -2,7 +2,7 @@
 #define HTTP_RESPONSE_H
 
 #include <stddef.h>
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 104857600
 
 /**
  * Tạo HTTP response từ file
