@@ -6,6 +6,45 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+HttpResponse* create_response(int status, const char* content_type, const char* body) {
+    HttpResponse* resp = malloc(sizeof(HttpResponse));
+    resp->status_code = status;
+    resp->content_type = strdup(content_type);
+    resp->body = body ? strdup(body) : NULL;
+    resp->body_length = body ? strlen(body) : 0;
+    resp->additional_headers = NULL;
+    return resp;
+}
+
+void send_response(int client_fd, HttpResponse* resp) {
+    char header[1024];
+    size_t header_len = snprintf(header, 1024,
+        "HTTP/1.1 %d %s\r\n"
+        "Content-Type: %s\r\n"
+        "Content-Length: %zu\r\n"
+        "Connection: close\r\n"
+        "%s\r\n",
+        resp->status_code,
+        resp->status_code == 200 ? "OK" : "Error",
+        resp->content_type,
+        resp->body_length,
+        resp->additional_headers ? resp->additional_headers : "");
+
+    send(client_fd, header, header_len, 0);
+    if (resp->body) {
+        send(client_fd, resp->body, resp->body_length, 0);
+    }
+}
+
+void free_response(HttpResponse* resp) {
+    if (resp) {
+        if (resp->content_type) free(resp->content_type);
+        if (resp->body) free(resp->body);
+        if (resp->additional_headers) free(resp->additional_headers);
+        free(resp);
+    }
+}
+
 // Trong http_response.c, hàm get_mime_type đã được cập nhật để hỗ trợ CSS và JS
 const char *get_mime_type(const char *file_ext) {
     if (!file_ext) {

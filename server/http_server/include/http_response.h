@@ -1,28 +1,22 @@
+// http_response.h
 #ifndef HTTP_RESPONSE_H
 #define HTTP_RESPONSE_H
 
 #include <stddef.h>
 #define BUFFER_SIZE 104857600
 
-/**
- * Tạo HTTP response từ file
- * 
- * @param file_name Tên file để đưa vào response
- * @param file_ext Phần mở rộng file
- * @param response Buffer để lưu response
- * @param response_len Con trỏ đến biến lưu độ dài response
- */
-void build_http_response(const char *file_name, 
-                         const char *file_ext,
-                         char *response, 
-                         size_t *response_len);
+typedef struct {
+    int status_code;
+    char* content_type;
+    char* body;
+    size_t body_length;
+    char* additional_headers;
+} HttpResponse;
 
-/**
- * Lấy MIME type dựa vào phần mở rộng file
- * 
- * @param file_ext Phần mở rộng file
- * @return MIME type tương ứng
- */
+void build_http_response(const char *file_name, const char *file_ext, char *response, size_t *response_len);
 const char *get_mime_type(const char *file_ext);
+void send_response(int client_fd, HttpResponse* resp);
+HttpResponse* create_response(int status, const char* content_type, const char* body);
+void free_response(HttpResponse* resp);
 
 #endif // HTTP_RESPONSE_H

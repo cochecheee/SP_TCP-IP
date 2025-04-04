@@ -1,23 +1,38 @@
+// http_request.h
 #ifndef HTTP_REQUEST_H
 #define HTTP_REQUEST_H
 
 #include <stdbool.h>
 #include <stddef.h>
 
+typedef enum {
+    HTTP_GET,
+    HTTP_POST,
+    HTTP_PUT,
+    HTTP_DELETE,
+    HTTP_HEAD,
+    HTTP_UNKNOWN
+} HttpMethod;
+
+typedef struct {
+    HttpMethod method;
+    char* path;
+    char* body;
+    size_t body_length;
+} HttpRequest;
+
 /**
- * Phân tích request HTTP và trích xuất tên file
- * 
- * @param request Buffer chứa request HTTP
- * @param request_size Kích thước request
- * @return Con trỏ tới tên file đã được decode (cần được giải phóng khi sử dụng xong)
+ * Parse HTTP request and extract information
  */
-char *parse_http_request(const char *request, size_t request_size);
+HttpRequest* parse_http_request(const char *request, size_t request_size);
+
+/**
+ * Free HttpRequest structure
+ */
+void free_http_request(HttpRequest* request);
 
 /**
  * Decode URL encoded string
- * 
- * @param src Chuỗi URL encoded 
- * @return Chuỗi đã được decode (cần được giải phóng khi sử dụng xong)
  */
 char *url_decode(const char *src);
 
