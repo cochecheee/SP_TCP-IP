@@ -1,107 +1,165 @@
-#include "../include/server.h"
-#include "../include/ssl.h"
-#include <stdlib.h>
+#include "../include/http_server.h"
+#include "../include/request_handler.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <stdio.h>
-#include <string.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <pthread.h>
-#include <sys/socket.h>
 
-Server* server_create() {
-    Server *server = malloc(sizeof(Server));
-    if (!server) return NULL;
-    
-    server->fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (server->fd < 0) {
-        free(server);
-        return NULL;
+// Khai báo struct client_info ở phạm vi toàn cục
+struct client_info {
+    int client_fd;
+    SSL *ssl;
+};
+
+SSL_CTX *create_ssl_context();
+void load_certificates(SSL_CTX *ctx, const char *cert_file, const char *key_file);
+
+// Khởi tạo SSL context
+SSL_CTX *create_ssl_context() {
+    const SSL_METHOD *method;
+    SSL_CTX *ctx;
+
+    // Khởi tạo OpenSSL
+    SSL_library_init();
+    OpenSSL_add_all_algorithms();
+    SSL_load_error_strings();
+
+    // Sử dụng SSLv23_server_method thay cho TLS_server_method để tương thích rộng hơn
+    method = SSLv23_server_method();
+    if (!method) {
+        perror("Unable to create SSL method");
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_FAILURE);
     }
-    
-    // Set SO_REUSEADDR to avoid "address already in use" errors
-    int opt = 1;
-    setsockopt(server->fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-    
-    return server;
-}
 
-bool server_bind(Server *server, int port) {
-    server->address.sin_family = AF_INET;
-    server->address.sin_addr.s_addr = INADDR_ANY;
-    server->address.sin_port = htons(port);
-    
-    if (bind(server->fd, (struct sockaddr *)&server->address, sizeof(server->address)) < 0) {
-        return false;
+    ctx = SSL_CTX_new(method);
+    if (!ctx) {
+        perror("Unable to create SSL context");
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_FAILURE);
     }
-    return true;
+
+    return ctx;
 }
 
-void server_listen(Server *server) {
-    listen(server->fd, MAX_CLIENTS);
-    printf("Server listening on port %d\n", PORT);
-}
+// Tải chứng chỉ và khóa
+void load_certificates(SSL_CTX *ctx, const char *cert_file, const char *key_file) {
+    if (SSL_CTX_use_certificate_file(ctx, cert_file, SSL_FILETYPE_PEM) <= 0) {
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_FAILURE);
+    }
 
-void server_destroy(Server *server) {
-    if (server) {
-        close(server->fd);
-        free(server);
+    if (SSL_CTX_use_PrivateKey_file(ctx, key_file, SSL_FILETYPE_PEM) <= 0) {
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_FAILURE);
     }
 }
 
-void* client_handler(void *arg) {
-    int client_fd = *((int *)arg);
-    free(arg);
-    
-    handle_client(client_fd);
+void *handle_client(void *arg) {
+    struct client_info *info = (struct client_info *)arg;
+    int client_fd = info->client_fd;
+    SSL *ssl = info->ssl;
+    char buffer[BUFFER_SIZE];
+
+    // Chấp nhận kết nối SSL
+    if (SSL_accept(ssl) <= 0) {
+        ERR_print_errors_fp(stderr);
+    } else {
+        // Nhận dữ liệu từ client qua SSL
+        ssize_t bytes_received = SSL_read(ssl, buffer, sizeof(buffer) - 1);
+        if (bytes_received > 0) {
+            buffer[bytes_received] = '\0';
+            // Truyền thêm tham số ssl vào handle_request
+            handle_request(client_fd, buffer, ssl);
+        }
+    }
+
+    // Đóng kết nối SSL và socket
+    SSL_free(ssl);
     close(client_fd);
+    free(info);
     return NULL;
 }
 
-void accept_connections(Server *server, bool use_ssl) {
-    SSL_CTX *ctx = NULL;
-    if (use_ssl) {
-        ssl_init();
-        ctx = create_ssl_context();
-        configure_ssl_context(ctx, "../cert.pem", "../key.pem");
+void start_server() {
+    int server_fd, client_fd;
+    struct sockaddr_in server_addr, client_addr;
+    socklen_t client_len = sizeof(client_addr);
+
+    // Khởi tạo SSL context
+    SSL_CTX *ctx = create_ssl_context();
+    load_certificates(ctx, "server.crt", "server.key");
+
+    // Tạo socket
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("socket failed");
+        SSL_CTX_free(ctx);
+        exit(EXIT_FAILURE);
     }
-    
+
+    // Cấu hình socket
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(PORT);
+
+    // Bind socket
+    if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+        perror("bind failed");
+        close(server_fd);
+        SSL_CTX_free(ctx);
+        exit(EXIT_FAILURE);
+    }
+
+    // Lắng nghe kết nối
+    if (listen(server_fd, 10) < 0) {
+        perror("listen failed");
+        close(server_fd);
+        SSL_CTX_free(ctx);
+        exit(EXIT_FAILURE);
+    }
+
+    printf("HTTPS Server listening on port %d\n", PORT);
+
     while (1) {
-        struct sockaddr_in client_addr;
-        socklen_t client_len = sizeof(client_addr);
-        int *client_fd = malloc(sizeof(int));
-        
-        *client_fd = accept(server->fd, (struct sockaddr *)&client_addr, &client_len);
-        if (*client_fd < 0) {
+        // Chấp nhận kết nối từ client
+        if ((client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_len)) < 0) {
             perror("accept failed");
-            free(client_fd);
             continue;
         }
-        
-        if (use_ssl) {
-            SSL *ssl = SSL_new(ctx);
-            SSL_set_fd(ssl, *client_fd);
-            
-            if (SSL_accept(ssl) <= 0) {
-                ERR_print_errors_fp(stderr);
-                SSL_free(ssl);
-                close(*client_fd);
-                free(client_fd);
-                continue;
-            }
-            
-            // Create a new thread for SSL client
-            pthread_t thread_id;
-            pthread_create(&thread_id, NULL, (void *(*)(void *))ssl_handle_client, ssl);
-            pthread_detach(thread_id);
-        } else {
-            // Create a new thread for regular client
-            pthread_t thread_id;
-            pthread_create(&thread_id, NULL, client_handler, client_fd);
-            pthread_detach(thread_id);
+
+        // Tạo SSL object cho kết nối
+        SSL *ssl = SSL_new(ctx);
+        if (!ssl) {
+            perror("SSL_new failed");
+            close(client_fd);
+            continue;
         }
+        SSL_set_fd(ssl, client_fd);
+
+        // Tạo struct để truyền vào thread
+        struct client_info *info = malloc(sizeof(struct client_info));
+        if (!info) {
+            perror("malloc failed");
+            SSL_free(ssl);
+            close(client_fd);
+            continue;
+        }
+        info->client_fd = client_fd;
+        info->ssl = ssl;
+
+        // Tạo thread để xử lý client
+        pthread_t thread_id;
+        pthread_create(&thread_id, NULL, handle_client, (void *)info);
+        pthread_detach(thread_id);
     }
-    
-    if (use_ssl && ctx) {
-        SSL_CTX_free(ctx);
-        ssl_cleanup();
-    }
+
+    close(server_fd);
+    SSL_CTX_free(ctx);
+}
+
+int main() {
+    start_server();
+    return 0;
 }
