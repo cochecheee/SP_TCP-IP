@@ -25,7 +25,7 @@ HTTP_SERVER_DIR=server/http_server
 ## end
 
 ## https server
-HTTPS_SERVER_DIR=server/https_server
+# HTTPS_SERVER_DIR=server/https_server
 ## end
 
 # CLIENT_V2_DIR = client/st_server/v2  # Thêm thư mục v2
@@ -49,7 +49,7 @@ HTTP_SERVER_SRC=$(wildcard $(HTTP_SERVER_DIR)/src/*.c)
 ## end
 
 ## https server
-HTTPS_SERVER_SRC=$(wildcard $(HTTPS_SERVER_DIR)/src/*.c)
+# HTTPS_SERVER_SRC=$(wildcard $(HTTPS_SERVER_DIR)/src/*.c)
 ## end
 
 # Định nghĩa các file đối tượng (object files)
@@ -71,7 +71,7 @@ HTTP_SERVER_OBJ=$(HTTP_SERVER_SRC:.c=.o)
 ## end
 
 ## https server
-HTTPS_SERVER_OBJ=$(HTTPS_SERVER_SRC:.c=.o)
+# HTTPS_SERVER_OBJ=$(HTTPS_SERVER_SRC:.c=.o)
 ## end
 
 # Tên file thực thi
@@ -92,11 +92,12 @@ HTTP_SERVER_EXEC=$(HTTP_SERVER_DIR)/http_server
 ## end
 
 ## https server
-HTTPS_SERVER_EXEC=$(HTTPS_SERVER_DIR)/https_server
+# HTTPS_SERVER_EXEC=$(HTTPS_SERVER_DIR)/https_server
 ## end
 
 # Mục tiêu mặc định
-all: $(ST_CLIENT_V1_EXEC) $(ST_CLIENT_V2_EXEC) $(ST_SERVER_V1_EXEC) $(ST_SERVER_V2_EXEC) $(MT_CLIENT_EXEC) $(MT_SERVER_EXEC) $(HTTP_SERVER_EXEC) $(HTTPS_SERVER_EXEC)
+all: $(ST_CLIENT_V1_EXEC) $(ST_CLIENT_V2_EXEC) $(ST_SERVER_V1_EXEC) $(ST_SERVER_V2_EXEC) $(MT_CLIENT_EXEC) $(MT_SERVER_EXEC) $(HTTP_SERVER_EXEC) 
+# $(HTTPS_SERVER_EXEC)
 
 ## single threaded
 # Biên dịch chương trình client
@@ -128,8 +129,8 @@ $(HTTP_SERVER_EXEC): $(HTTP_SERVER_OBJ)
 ## end
 
 ## https server
-$(HTTPS_SERVER_EXEC): $(HTTPS_SERVER_OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(HTTPS_LDFLAGS)
+# $(HTTPS_SERVER_EXEC): $(HTTPS_SERVER_OBJ)
+# 	$(CC) $(CFLAGS) -o $@ $^ $(HTTPS_LDFLAGS)
 ## end
 
 # Quy tắc biên dịch file .c thành .o
@@ -138,4 +139,5 @@ $(HTTPS_SERVER_EXEC): $(HTTPS_SERVER_OBJ)
 
 # Dọn dẹp file biên dịch
 clean:
-	rm -f $(ST_CLIENT_V1_OBJ) $(ST_CLIENT_V2_OBJ) $(ST_SERVER_V1_OBJ) $(ST_SERVER_V2_OBJ) $(ST_CLIENT_V1_EXEC) $(ST_CLIENT_V2_EXEC) $(ST_SERVER_V1_EXEC) $(ST_SERVER_V2_EXEC) $(MT_CLIENT_OBJ) $(MT_SERVER_OBJ) $(MT_CLIENT_EXEC) $(MT_SERVER_EXEC) $(HTTP_SERVER_EXEC) $(HTTP_SERVER_OBJ) $(HTTPS_SERVER_EXEC) $(HTTPS_SERVER_OBJ)
+	rm -f $(ST_CLIENT_V1_OBJ) $(ST_CLIENT_V2_OBJ) $(ST_SERVER_V1_OBJ) $(ST_SERVER_V2_OBJ) $(ST_CLIENT_V1_EXEC) $(ST_CLIENT_V2_EXEC) $(ST_SERVER_V1_EXEC) $(ST_SERVER_V2_EXEC) $(MT_CLIENT_OBJ) $(MT_SERVER_OBJ) $(MT_CLIENT_EXEC) $(MT_SERVER_EXEC) $(HTTP_SERVER_EXEC) $(HTTP_SERVER_OBJ) 
+# $(HTTPS_SERVER_EXEC) $(HTTPS_SERVER_OBJ)
