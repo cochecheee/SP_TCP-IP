@@ -1,0 +1,19 @@
+services:
+  server:
+    build: .
+    image: ubuntu:20.04
+    volumes:
+      - ./:/app
+    tty: true
+    ports:
+      - 8080:8080
+    networks:
+      net-172.20.0.0:
+        ipv4_address: 172.20.0.100
+
+networks:
+      net-172.20.0.0:
+        name: net-172.20.0.0
+        ipam:
+            config:
+                - subnet: 172.20.0.0/24
