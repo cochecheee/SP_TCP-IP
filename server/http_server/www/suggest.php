@@ -21,9 +21,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($name == "" || $email == "" || $category == "" || $title == "") {
         $error_message = "Please fill in the required fields: Name, Email, Category and Title";
     }
-    if ($_POST["address"] != "") {
-        $error_message = "Bad form input";
-    }
+    // if ($_POST["address"] != "") {
+    //     $error_message = "Bad form input";
+    // }
   
     // Create a new PHPMailer instance
     $mail = new PHPMailer(true);

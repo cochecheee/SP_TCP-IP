@@ -2,6 +2,11 @@
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\SMTP;
+
+require 'inc/phpmailer/PHPMailer.php';
+require 'inc/phpmailer/SMTP.php';
+require 'inc/phpmailer/Exception.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $name = trim(filter_input(INPUT_POST,"name",FILTER_SANITIZE_STRING));
@@ -16,47 +21,72 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($name == "" || $email == "" || $category == "" || $title == "") {
         $error_message = "Please fill in the required fields: Name, Email, Category and Title";
     }
-    if ($_POST["address"] != "") {
-        $error_message = "Bad form input";
+    // if ($_POST["address"] != "") {
+    //     $error_message = "Bad form input";
+    // }
+  
+    // Create a new PHPMailer instance
+    $mail = new PHPMailer(true);
+    
+    // Check if email is valid
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error_message = "Invalid Email Address";
     }
-  
-  require 'inc/phpmailer/Exception.php';
-  require 'inc/phpmailer/PHPMailer.php';
-  require 'inc/phpmailer/SMTP.php';
-  
-  $mail = new PHPMailer(true);
-  
-  if (!$mail->ValidateAddress($email)) {
-    $error_message = "Invalid Email Address";
-  }
-  
-  if (!isset($error_message)) {
-    $email_body = "";
-    $email_body .= "Name " . $name . "\n";
-    $email_body .= "Email " . $email . "\n";
-    $email_body .= "Details " . $details . "\n";
     
-    $mail->setFrom($email, $name);
-    $mail->addAddress('treehouse@localhost.com', 'Amy');     // Add a recipient
-    
-    $mail->isHTML(false);                                  // Set email format to HTML
-    
-    $mail->Subject = 'Personal Media Library Suggestion from ' . $name;
-    $mail->Body    = $email_body;
-  
-    if($mail->send()) {
-      header("location:suggest.php?status=thanks");
-      exit;
-    }
-      $error_message = 'Message could not be sent.';
-      $error_message .= 'Mailer Error: ' . $mail->ErrorInfo;
+    // Only send email if no errors
+    if (!isset($error_message)) {
+        // Build email body content
+        $email_body = "";
+        $email_body .= "Name: " . $name . "\n";
+        $email_body .= "Email: " . $email . "\n";
+        $email_body .= "Category: " . $category . "\n";
+        $email_body .= "Title: " . $title . "\n";
+        
+        if (!empty($format)) { $email_body .= "Format: " . $format . "\n"; }
+        if (!empty($genre)) { $email_body .= "Genre: " . $genre . "\n"; }
+        if (!empty($year)) { $email_body .= "Year: " . $year . "\n"; }
+        if (!empty($details)) { $email_body .= "Details: " . $details . "\n"; }
+        
+        try {
+            // Configure SMTP settings
+            $mail->isSMTP();
+            $mail->Host       = 'smtp.gmail.com';
+            $mail->SMTPAuth   = true;
+            $mail->Username   = 'pythonsendmail8@gmail.com';
+            $mail->Password   = 'ymunhhhojswuiaqg';  // Consider storing this in a config file
+            $mail->SMTPSecure = 'tls';  // Use string value instead of class constant
+            $mail->Port       = 587;
+            
+            // Recipients
+            $mail->setFrom('pythonsendmail8@gmail.com', 'Media Suggestions');
+            $mail->addAddress('buitien747@gmail.com');  // Set where to receive emails
+            $mail->addReplyTo($email, $name);  // Set reply-to as the user
+            
+            // Content
+            $mail->isHTML(false);
+            $mail->Subject = 'Media Suggestion: ' . $title . ' (' . $category . ')';
+            $mail->Body    = $email_body;
+            
+            // Send email
+            $mail->send();
+            
+            // Redirect to thank you page
+            header("location:suggest.php?status=thanks");
+            exit;
+            
+        } catch (Exception $e) {
+            $error_message = "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+        }
     }
 }
 
 $pageTitle = "Suggest a Media Item";
 $section = "suggest";
 
-include("inc/header.php"); ?>
+include("inc/header.php"); 
+?>
+
+<!-- Rest of your HTML form remains unchanged -->
 
 <div class="section page">
   <div class="wrapper">
