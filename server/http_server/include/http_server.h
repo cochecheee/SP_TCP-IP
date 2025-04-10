@@ -7,7 +7,6 @@
 #define HTTP_PORT 8080
 #define BUFFER_SIZE 4096
 #define DOCUMENT_ROOT "./www"
-g;
 
 void *handle_client(void *arg);
 void start_server();
