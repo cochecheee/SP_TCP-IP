@@ -43,6 +43,8 @@ SSL_CTX *create_ssl_context() {
         exit(EXIT_FAILURE);
     }
 
+    printf("[DEBUG] SSL context created successfully.\n");
+
     return ctx;
 }
 
@@ -57,6 +59,8 @@ void load_certificates(SSL_CTX *ctx, const char *cert_file, const char *key_file
         ERR_print_errors_fp(stderr);
         exit(EXIT_FAILURE);
     }
+
+    printf("[DEBUG] Certificates loaded successfully.\n");
 }
 
 void *handle_client(void *arg) {
@@ -82,6 +86,7 @@ void *handle_client(void *arg) {
 
     if (bytes_received > 0) {
         buffer[bytes_received] = '\0';
+        printf("[DEBUG] Data received: %s\n", buffer);
         // Xử lý request với SSL hoặc không
         handle_request(client_fd, buffer, ssl, use_ssl);
     }
@@ -91,6 +96,7 @@ void *handle_client(void *arg) {
         SSL_free(ssl);
     }
     close(client_fd);
+    printf("[DEBUG] Connection closed.\n");
     free(info);
     return NULL;
 }
@@ -155,6 +161,8 @@ void start_server(server_config config) {
             perror("accept failed");
             continue;
         }
+
+        printf("[DEBUG] Client connected.\n");
 
         // Tạo struct để truyền vào thread
         struct client_info *info = malloc(sizeof(struct client_info));

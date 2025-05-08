@@ -13,6 +13,7 @@
 #include <openssl/ssl.h>
 
 void parse_headers(const char *request, char **headers) {
+    printf("[DEBUG] Parsing headers.\n");
     const char *header_end = strstr(request, "\r\n\r\n");
     if (!header_end) {
         *headers = NULL;
@@ -73,6 +74,7 @@ void set_cgi_headers(const char *headers) {
 }
 
 void handle_php_request(int client_fd, const char *file_path, const char *method, const char *body, const char *headers, SSL *ssl, int use_ssl) {
+    printf("[DEBUG] Handling PHP request for file: %s\n", file_path);
     setenv("REQUEST_METHOD", method, 1);
     setenv("SCRIPT_FILENAME", file_path, 1);
     setenv("REDIRECT_STATUS", "200", 1);
@@ -224,6 +226,7 @@ void handle_php_request(int client_fd, const char *file_path, const char *method
         }
 
         free(response);
+        printf("[DEBUG] Response sent to client.\n");
     }
 }
 
